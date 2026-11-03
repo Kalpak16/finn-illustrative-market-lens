@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { FileText, Link2, Plus, Upload } from "lucide-react";
+import { FileText, Link2, Upload } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Assistant } from "@/components/finn/Assistant";
@@ -154,7 +154,7 @@ function Research() {
           </div>
 
           <aside className="space-y-4">
-            <Section title="Sources used" action={report ? <DemoBadge label="Demo" /> : <Plus className="size-4 text-muted-foreground" />}>
+            <Section title="Sources used" action={report ? <DemoBadge label="Demo" /> : undefined}>
               {report ? (
                 <ul className="space-y-2.5">
                   {report.sources.map((s, i) => (

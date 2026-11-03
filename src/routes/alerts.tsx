@@ -203,21 +203,21 @@ function Alerts() {
           )}
         </Section>
 
-        <Section title={`Triggered alerts (${triggered.length})`} action={<DemoBadge label="Evaluated on demo data" />}>
+        <Section title={`Triggered alerts (${triggered.length})`} action={<DemoBadge label="Demo data" />}>
           {triggered.length === 0 ? (
             <p className="text-sm text-muted-foreground">No enabled rule matches the current data.</p>
           ) : (
             <ul className="space-y-2">
               {triggered.map((t, i) => (
                 <li key={i} className="rounded-lg border border-border bg-surface p-3">
-                  <div className="flex items-center justify-between text-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-x-2 text-sm">
                     <span>
                       <span className="num font-semibold">{t.ticker}</span> <span className="text-muted-foreground">· {t.ruleName}</span>
                     </span>
                     <span className="text-[11px] text-muted-foreground">data as of {t.at}</span>
                   </div>
                   <div className="eyebrow mt-2">Why it triggered</div>
-                  <ul className="mt-1 space-y-0.5 text-xs">
+                  <ul className="mt-1 space-y-0.5 break-words text-xs">
                     {t.reasons.map((r, j) => (
                       <li key={j}>• {r}</li>
                     ))}
