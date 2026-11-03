@@ -354,7 +354,7 @@ export function GroundedResearch({ ticker, g, onInspect, onUsed }: { ticker: str
               <p className="mt-3 text-sm text-warning">{INSUFFICIENT}</p>
             ) : (
               <div className="mt-3 overflow-x-auto">
-                <table className="w-full min-w-[640px] text-sm">
+                <table className="w-full min-w-[640px] text-sm lg:min-w-0">
                   <thead className="text-left text-xs text-muted-foreground"><tr><th className="py-1.5 pr-3 font-medium">Management statement</th><th className="py-1.5 pr-3 font-medium">Period</th><th className="py-1.5 pr-3 font-medium">Actual outcome</th><th className="py-1.5 font-medium">Status</th></tr></thead>
                   <tbody>
                     {results.guidance.out.guidance.map((r, i) => (
