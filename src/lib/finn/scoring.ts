@@ -56,3 +56,26 @@ export function scoreAnnouncement(
   const breakdown = Object.fromEntries(Object.entries(parts).map(([k, v]) => [k, Math.round((v / total) * 100)]));
   return { ...a, score, priority: priorityOf(score), breakdown };
 }
+
+const DRIVER_LABEL: Record<string, string> = {
+  Category: "filing type",
+  Materiality: "financial materiality",
+  "Earnings impact": "earnings impact",
+  "Balance sheet": "balance-sheet impact",
+  Strategic: "strategic importance",
+  Recency: "recency",
+  Portfolio: "portfolio exposure",
+};
+
+/** Top contributors to a score, largest first, as plain-language labels with points. */
+export function rankDrivers(a: Pick<ScoredAnnouncement, "breakdown">, n = 3): { label: string; points: number }[] {
+  return Object.entries(a.breakdown)
+    .filter(([, v]) => v > 0)
+    .sort((x, y) => y[1] - x[1])
+    .slice(0, n)
+    .map(([k, v]) => ({ label: DRIVER_LABEL[k] ?? k, points: v }));
+}
+
+export function priorityThreshold(p: Priority): string {
+  return p === "critical" ? "score ≥ 70" : p === "important" ? "score 45–69" : "score < 45";
+}
