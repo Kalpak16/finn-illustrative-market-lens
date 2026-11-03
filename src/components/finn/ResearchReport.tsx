@@ -17,8 +17,8 @@ const fmtCr = (v: number) => "₹" + Math.round(v).toLocaleString("en-IN") + " c
 export function ResearchReportView({ r }: { r: R }) {
   const [view, setView] = useState<"annual" | "quarterly">("annual");
   const series = (view === "annual" ? r.annual : r.quarterly).map((p) => ({ ...p, margin: +((p.ebitda / p.revenue) * 100).toFixed(1) }));
-  const cash = r.annual.map((y) => ({ ...y, conv: +((y.ocf / y.pat) * 100).toFixed(0) }));
-  const divergent = cash.filter((c) => c.conv < 80).length;
+  const cash = r.annual.map((y) => ({ ...y, conv: y.pat > 0 && y.ocf != null ? +((y.ocf / y.pat) * 100).toFixed(0) : null }));
+  const divergent = cash.filter((c) => c.conv != null && c.conv < 80).length;
 
   return (
     <div className="space-y-4">
@@ -172,8 +172,8 @@ export function ResearchReportView({ r }: { r: R }) {
           </div>
           <div className="num mt-2 flex flex-wrap gap-2 text-xs">
             {cash.map((c) => (
-              <span key={c.period} className={cn("rounded border px-1.5 py-0.5", c.conv >= 100 ? "border-positive/40 text-positive" : c.conv >= 80 ? "border-border" : "border-negative/40 text-negative")}>
-                {c.period} OCF/PAT {c.conv}%
+              <span key={c.period} className={cn("rounded border px-1.5 py-0.5", c.conv == null ? "border-border text-muted-foreground" : c.conv >= 100 ? "border-positive/40 text-positive" : c.conv >= 80 ? "border-border" : "border-negative/40 text-negative")} title={c.conv == null ? "Not meaningful: PAT was zero or negative" : undefined}>
+                {c.period} OCF/PAT {c.conv == null ? "n.m." : `${c.conv}%`}
               </span>
             ))}
           </div>
@@ -224,7 +224,7 @@ export function ResearchReportView({ r }: { r: R }) {
             <li key={n.statement} className="grid gap-3 p-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_9rem]">
               <div>
                 <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"><span className="num mr-1">{i + 1}.</span>Management said · {n.period}</div>
-                <p className="mt-1 text-sm">“{n.statement}”</p>
+                <p className="mt-1 text-sm">“{n.statement.replace(/^["“]+|["”]+$/g, "")}”</p>
               </div>
               <div>
                 <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Numbers show</div>
