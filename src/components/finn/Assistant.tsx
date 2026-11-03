@@ -1,4 +1,4 @@
-import { Send, Sparkles } from "lucide-react";
+import { Search } from "lucide-react";
 import { useState } from "react";
 import { answer, type AssistantAnswer } from "@/lib/finn/assistant";
 import type { ResearchReport } from "@/lib/finn/types";
@@ -23,8 +23,8 @@ export function Assistant({ report, ticker }: { report?: ResearchReport; ticker:
   return (
     <div className="panel flex h-full flex-col">
       <div className="flex items-center gap-2 border-b border-border px-4 py-3">
-        <Sparkles className="size-4 text-primary" />
-        <div className="text-sm font-semibold">Ask FINN about {ticker}</div>
+        <div className="text-sm font-semibold">Research query · <span className="num">{ticker}</span></div>
+        <span className="ml-auto text-[11px] text-muted-foreground">Sample-report evidence only</span>
       </div>
       <div className="flex-1 space-y-4 overflow-y-auto p-4" style={{ maxHeight: 520 }}>
         {log.length === 0 && (
@@ -39,7 +39,7 @@ export function Assistant({ report, ticker }: { report?: ResearchReport; ticker:
         )}
         {log.map(({ q, a }, i) => (
           <div key={i} className="space-y-2">
-            <div className="ml-auto w-fit max-w-[90%] rounded-lg bg-primary/15 px-3 py-2 text-sm">{q}</div>
+            <div className="text-sm font-semibold"><span className="mr-1.5 text-muted-foreground">Q.</span>{q}</div>
             <div className="rounded-lg border border-border bg-surface p-3 text-sm">
               <div className="eyebrow mb-1.5 text-primary">{a.intent}</div>
               <ul className="space-y-1">
@@ -100,8 +100,8 @@ export function Assistant({ report, ticker }: { report?: ResearchReport; ticker:
           placeholder="Ask a research question…"
           className="h-9 flex-1 rounded-lg border border-border bg-surface px-3 text-sm outline-none focus:border-primary/60"
         />
-        <button type="submit" aria-label="Send" className="grid size-9 place-items-center rounded-lg bg-primary text-primary-foreground">
-          <Send className="size-4" />
+        <button type="submit" aria-label="Run query" className="grid size-9 place-items-center rounded-lg bg-primary text-primary-foreground">
+          <Search className="size-4" />
         </button>
       </form>
     </div>
