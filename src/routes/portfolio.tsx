@@ -82,7 +82,7 @@ function Portfolio() {
               placeholder="Add company by NSE ticker…"
               onSelect={(t) => {
                 if (holdings.some((h) => h.ticker === t)) return toast.info(`${t} is already in your portfolio`);
-                actions.addHolding(t);
+                if (!actions.addHolding(t)) return toast.error(`No demo market data for ${t}`, { description: "Only demo-universe companies can be valued in demo mode. Add it to the Watchlist instead." });
                 toast.success(`${t} added to portfolio`);
               }}
             />
@@ -188,7 +188,7 @@ function Portfolio() {
                           onClick={(e) => {
                             e.stopPropagation();
                             actions.removeHolding(h.ticker);
-                            toast(`${h.ticker} removed`, { action: { label: "Undo", onClick: () => actions.addHolding(h.ticker, h.name) } });
+                            toast(`${h.ticker} removed`, { action: { label: "Undo", onClick: () => actions.addHolding(h.ticker) } });
                           }}
                           className="rounded p-1 text-muted-foreground hover:bg-negative/10 hover:text-negative"
                         >

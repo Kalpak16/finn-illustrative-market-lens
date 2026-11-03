@@ -6,7 +6,7 @@ import { Sparkline } from "@/components/finn/PriceChart";
 import { DemoBadge, EmptyState, PageHeader } from "@/components/finn/primitives";
 import { Button } from "@/components/ui/button";
 import { companyName } from "@/lib/finn/data/companies";
-import { getMarketSnapshot } from "@/lib/finn/data/market";
+import { getMarketSnapshot, hasMarketData } from "@/lib/finn/data/market";
 import { getResearch } from "@/lib/finn/data/research";
 import { inr, pct, toneOf } from "@/lib/finn/format";
 import { actions, useFinnState, useScoredAnnouncements } from "@/lib/finn/store";
@@ -49,7 +49,7 @@ function Watchlist() {
       ) : (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {watchlist.map((t) => {
-            const m = getMarketSnapshot(t);
+            const m = hasMarketData(t) ? getMarketSnapshot(t) : null;
             const latest = anns.find((a) => a.ticker === t);
             const researched = !!getResearch(t);
             return (
@@ -59,13 +59,17 @@ function Watchlist() {
                     <div className="num font-semibold hover:text-primary">{t}</div>
                     <div className="truncate text-xs text-muted-foreground">{companyName(t)}</div>
                   </Link>
-                  <Sparkline data={m.history.slice(-30)} positive={m.changePct >= 0} />
+                  {m && <Sparkline data={m.history.slice(-30)} positive={m.changePct >= 0} />}
                 </div>
-                <div className="num mt-3 flex items-baseline gap-3">
-                  <span className="text-lg font-semibold">{inr(m.close)}</span>
-                  <span className={`text-sm ${toneOf(m.changePct)}`}>{pct(m.changePct)}</span>
-                  <span className="ml-auto text-[11px] text-muted-foreground">EOD {m.asOf}</span>
-                </div>
+                {m ? (
+                  <div className="num mt-3 flex items-baseline gap-3">
+                    <span className="text-lg font-semibold">{inr(m.close)}</span>
+                    <span className={`text-sm ${toneOf(m.changePct)}`}>{pct(m.changePct)}</span>
+                    <span className="ml-auto text-[11px] text-muted-foreground">EOD {m.asOf}</span>
+                  </div>
+                ) : (
+                  <div className="mt-3 text-sm text-muted-foreground">Price: Not available</div>
+                )}
                 <div className="mt-3 flex-1 rounded-lg border border-border bg-surface p-2.5 text-xs">
                   <div className="eyebrow mb-1">Latest important announcement</div>
                   {latest ? <span>{latest.headline}</span> : <span className="text-muted-foreground">None in the current window.</span>}

@@ -2,7 +2,7 @@ import { useMemo, useSyncExternalStore } from "react";
 import { DEFAULT_RULES, evaluateRule } from "./alerts";
 import { ANNOUNCEMENTS, DEMO_REFERENCE_NOW } from "./data/announcements";
 import { PORTFOLIO_SEED, WATCHLIST_SEED, findCompany } from "./data/companies";
-import { getMarketSnapshot } from "./data/market";
+import { getMarketSnapshot, hasMarketData } from "./data/market";
 import { DEFAULT_WEIGHTS, scoreAnnouncement } from "./scoring";
 import type { AlertRule, Holding, Settings } from "./types";
 
@@ -70,14 +70,15 @@ export function useFinnState(): FinnState {
 }
 
 export const actions = {
-  addHolding(ticker: string, name?: string) {
+  /** Returns false when no demo market data exists for the symbol (cannot be valued). */
+  addHolding(ticker: string): boolean {
     const t = ticker.trim().toUpperCase();
     const c = findCompany(t);
+    if (!c || !hasMarketData(t)) return false;
     setState((s) =>
-      s.holdings.some((h) => h.ticker === t)
-        ? s
-        : { ...s, holdings: [...s.holdings, { ticker: t, name: c?.name ?? name ?? t, sector: c?.sector ?? "Consumer", quantity: 100 }] },
+      s.holdings.some((h) => h.ticker === t) ? s : { ...s, holdings: [...s.holdings, { ...c, quantity: 100 }] },
     );
+    return true;
   },
   removeHolding(ticker: string) {
     setState((s) => ({ ...s, holdings: s.holdings.filter((h) => h.ticker !== ticker) }));
@@ -121,10 +122,12 @@ export function useTriggeredAlerts() {
   const { holdings, watchlist, rules } = useFinnState();
   const anns = useScoredAnnouncements();
   return useMemo(() => {
-    const companies = [
-      ...holdings,
-      ...watchlist.map((t) => findCompany(t) ?? { ticker: t, name: t, sector: "Consumer" as const }),
-    ];
+    // Tracked companies plus any company named explicitly in a rule.
+    const tickers = new Set([...holdings.map((h) => h.ticker), ...watchlist, ...rules.flatMap((r) => r.tickers)]);
+    const companies = [...tickers]
+      .filter(hasMarketData)
+      .map((t) => holdings.find((h) => h.ticker === t) ?? findCompany(t))
+      .filter((c): c is NonNullable<typeof c> => !!c);
     return rules.flatMap((r) => evaluateRule(r, companies, anns, getMarketSnapshot));
   }, [holdings, watchlist, rules, anns]);
 }

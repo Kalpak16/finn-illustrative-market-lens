@@ -9,7 +9,7 @@ import { CompanyAvatar, DemoBadge, Section, Stat } from "@/components/finn/primi
 import { Button } from "@/components/ui/button";
 import { findCompany } from "@/lib/finn/data/companies";
 import { ANNOUNCEMENTS } from "@/lib/finn/data/announcements";
-import { getMarketSnapshot } from "@/lib/finn/data/market";
+import { getMarketSnapshot, hasMarketData } from "@/lib/finn/data/market";
 import { getResearch } from "@/lib/finn/data/research";
 import { compact, inr, pct, toneOf } from "@/lib/finn/format";
 import { scoreAnnouncement } from "@/lib/finn/scoring";
@@ -33,6 +33,7 @@ function CompanyPage() {
   const { holdings, watchlist, settings } = useFinnState();
   const [open, setOpen] = useState<ScoredAnnouncement | null>(null);
   const c = findCompany(ticker);
+  const hasData = hasMarketData(ticker);
   const m = getMarketSnapshot(ticker);
   const inPort = holdings.some((h) => h.ticker === ticker);
   const anns = ANNOUNCEMENTS.filter((a) => a.ticker === ticker)
@@ -52,8 +53,8 @@ function CompanyPage() {
             {!c && " · not in demo universe"}
           </div>
         </div>
-        {!inPort && (
-          <Button variant="secondary" size="sm" onClick={() => (actions.addHolding(ticker, c?.name), toast.success(`${ticker} added to portfolio`))}>
+        {!inPort && hasData && (
+          <Button variant="secondary" size="sm" onClick={() => (actions.addHolding(ticker), toast.success(`${ticker} added to portfolio`))}>
             <Plus className="size-3.5" /> Portfolio
           </Button>
         )}
@@ -71,6 +72,11 @@ function CompanyPage() {
 
       <div className="grid gap-5 xl:grid-cols-[1fr_380px]">
         <div className="min-w-0 space-y-5">
+          {!hasData ? (
+            <Section title="Price & volume (EOD)">
+              <p className="text-sm text-muted-foreground">Market data not available for {ticker} in demo mode. No market-data source is connected, so FINN shows no price rather than inventing one.</p>
+            </Section>
+          ) : (
           <Section title="Price & volume (EOD)" action={<DemoBadge label="Synthetic EOD" />}>
             <div className="mb-3 grid grid-cols-2 gap-4 sm:grid-cols-4">
               <Stat label={`Close · ${m.asOf}`} value={inr(m.close)} />
@@ -81,6 +87,7 @@ function CompanyPage() {
             <PriceVolumeChart data={m.history} />
             <div className="mt-1 text-[11px] text-muted-foreground">{m.source}</div>
           </Section>
+          )}
 
           <div>
             <h2 className="mb-3 text-base font-semibold">Developments</h2>

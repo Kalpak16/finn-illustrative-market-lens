@@ -179,7 +179,7 @@ function Alerts() {
                   <li key={r.id} className={cn("rounded-lg border border-border bg-surface p-3", !r.enabled && "opacity-60")}>
                     <div className="flex items-center gap-2">
                       <Switch checked={r.enabled} onCheckedChange={(v) => actions.upsertRule({ ...r, enabled: v })} aria-label="Enable rule" />
-                      <span className="flex-1 truncate text-sm font-medium">{r.name}</span>
+                      <span className="min-w-0 flex-1 truncate text-sm font-medium">{r.name}</span>
                       {r.enabled && <span className="num rounded bg-primary/15 px-1.5 text-xs text-primary">{hits} hit{hits === 1 ? "" : "s"}</span>}
                       <button aria-label="Edit rule" onClick={() => setEditing(r)} className="rounded p-1 text-muted-foreground hover:text-foreground">
                         <Pencil className="size-3.5" />
