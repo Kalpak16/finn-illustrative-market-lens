@@ -73,7 +73,7 @@ export function SourceCite({ source, compact }: { source: SourceRef; compact?: b
 
 export function Section({ title, action, children, className }: { title: ReactNode; action?: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <section className={cn("panel p-4", className)}>
+    <section className={cn("panel min-w-0 p-4", className)}>
       <div className="mb-3 flex items-center justify-between gap-2">
         <h2 className="text-sm font-semibold">{title}</h2>
         {action}

@@ -51,7 +51,7 @@ export const ANNOUNCEMENTS: Announcement[] = [
     whyItMatters:
       "An outlook change raises the probability of a downgrade, which would lift refinancing costs on a still-meaningful debt stack.",
     implications:
-      "Watch net automotive debt trajectory and JLR free cash flow guidance; the stock fell sharply on 2.9x normal volume.",
+      "Watch net automotive debt trajectory and JLR free cash flow guidance; the stock fell sharply on heavy volume (see EOD panel).",
     investigate: "Does JLR's FY27 free-cash-flow guidance still hold after Q2 volumes?",
     factors: { materiality: 0.85, earningsImpact: 0.6, balanceSheetImpact: 0.95, strategic: 0.6 },
     source: {

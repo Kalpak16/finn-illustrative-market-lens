@@ -40,7 +40,8 @@ function Settings() {
           <span className="text-muted-foreground">Display name</span>
           <input
             value={settings.displayName}
-            onChange={(e) => actions.updateSettings({ displayName: e.target.value || "Investor" })}
+            onChange={(e) => actions.updateSettings({ displayName: e.target.value })}
+            onBlur={(e) => !e.target.value.trim() && actions.updateSettings({ displayName: "Investor" })}
             className="mt-1 h-9 w-full max-w-xs rounded-lg border border-border bg-surface px-3 text-sm outline-none focus:border-primary/60"
           />
         </label>

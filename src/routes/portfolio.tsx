@@ -82,7 +82,7 @@ function Portfolio() {
               placeholder="Add company by NSE ticker…"
               onSelect={(t) => {
                 if (holdings.some((h) => h.ticker === t)) return toast.info(`${t} is already in your portfolio`);
-                actions.addHolding(t);
+                if (!actions.addHolding(t)) return toast.error(`No demo market data for ${t}`, { description: "Only demo-universe companies can be valued in demo mode. Add it to the Watchlist instead." });
                 toast.success(`${t} added to portfolio`);
               }}
             />
@@ -101,7 +101,7 @@ function Portfolio() {
         <>
           <div className="mb-5 grid gap-5 lg:grid-cols-[1fr_320px]">
             <Section title="Performance (90 trading days)" action={<span className="text-[11px] text-muted-foreground">Current holdings, back-filled</span>}>
-              <div className="mb-3 grid grid-cols-3 gap-4">
+              <div className="mb-3 grid grid-cols-2 gap-4 sm:grid-cols-3">
                 <Stat label="Total value" value={inr(totals.value, 0)} />
                 <Stat label="Daily change" value={<span className={toneOf(totals.change)}>{pct(totals.changePct)}</span>} sub={inr(totals.change, 0)} />
                 <Stat label="90D change" value={<span className={toneOf(history.length ? history[history.length - 1].value - history[0].value : 0)}>{history.length ? pct(((history[history.length - 1].value - history[0].value) / history[0].value) * 100) : "—"}</span>} />
@@ -188,7 +188,7 @@ function Portfolio() {
                           onClick={(e) => {
                             e.stopPropagation();
                             actions.removeHolding(h.ticker);
-                            toast(`${h.ticker} removed`, { action: { label: "Undo", onClick: () => actions.addHolding(h.ticker, h.name) } });
+                            toast(`${h.ticker} removed`, { action: { label: "Undo", onClick: () => actions.addHolding(h.ticker) } });
                           }}
                           className="rounded p-1 text-muted-foreground hover:bg-negative/10 hover:text-negative"
                         >

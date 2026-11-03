@@ -67,7 +67,11 @@ function NumField({ label, value, onChange, step = 1 }: { label: string; value: 
 function RuleDialog({ rule, onClose }: { rule: AlertRule | null; onClose: () => void }) {
   const { holdings } = useFinnState();
   const [r, setR] = useState<AlertRule | null>(rule);
-  if (rule && r?.id !== rule.id) setR(rule);
+  const [tickersText, setTickersText] = useState(rule?.tickers.join(", ") ?? "");
+  if (rule && r?.id !== rule.id) {
+    setR(rule);
+    setTickersText(rule.tickers.join(", "));
+  }
   const sectors = [...new Set(holdings.map((h) => h.sector))] as Sector[];
   const toggle = <T,>(arr: T[], v: T) => (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
   return (
@@ -87,8 +91,11 @@ function RuleDialog({ rule, onClose }: { rule: AlertRule | null; onClose: () => 
             <div>
               <div className="eyebrow mb-1.5">Companies (empty = any)</div>
               <input
-                value={r.tickers.join(", ")}
-                onChange={(e) => setR({ ...r, tickers: e.target.value.toUpperCase().split(/[,\s]+/).filter(Boolean) })}
+                value={tickersText}
+                onChange={(e) => {
+                  setTickersText(e.target.value.toUpperCase());
+                  setR({ ...r, tickers: e.target.value.toUpperCase().split(/[,\s]+/).filter(Boolean) });
+                }}
                 placeholder="e.g. INFY, TCS"
                 className="num h-9 w-full rounded-lg border border-border bg-surface px-3 text-sm outline-none focus:border-primary/60"
               />
@@ -167,7 +174,7 @@ function Alerts() {
           </Button>
         }
       />
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <Section title={`Rules (${rules.length})`}>
           {rules.length === 0 ? (
             <EmptyState icon={<Zap className="size-6" />} title="No rules" body="Create a rule to be alerted on filings, priority, price or volume." />
@@ -179,7 +186,7 @@ function Alerts() {
                   <li key={r.id} className={cn("rounded-lg border border-border bg-surface p-3", !r.enabled && "opacity-60")}>
                     <div className="flex items-center gap-2">
                       <Switch checked={r.enabled} onCheckedChange={(v) => actions.upsertRule({ ...r, enabled: v })} aria-label="Enable rule" />
-                      <span className="flex-1 truncate text-sm font-medium">{r.name}</span>
+                      <span className="min-w-0 flex-1 truncate text-sm font-medium">{r.name}</span>
                       {r.enabled && <span className="num rounded bg-primary/15 px-1.5 text-xs text-primary">{hits} hit{hits === 1 ? "" : "s"}</span>}
                       <button aria-label="Edit rule" onClick={() => setEditing(r)} className="rounded p-1 text-muted-foreground hover:text-foreground">
                         <Pencil className="size-3.5" />
@@ -203,21 +210,21 @@ function Alerts() {
           )}
         </Section>
 
-        <Section title={`Triggered alerts (${triggered.length})`} action={<DemoBadge label="Evaluated on demo data" />}>
+        <Section title={`Triggered alerts (${triggered.length})`} action={<DemoBadge label="Demo data" />}>
           {triggered.length === 0 ? (
             <p className="text-sm text-muted-foreground">No enabled rule matches the current data.</p>
           ) : (
             <ul className="space-y-2">
               {triggered.map((t, i) => (
                 <li key={i} className="rounded-lg border border-border bg-surface p-3">
-                  <div className="flex items-center justify-between text-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-x-2 text-sm">
                     <span>
                       <span className="num font-semibold">{t.ticker}</span> <span className="text-muted-foreground">· {t.ruleName}</span>
                     </span>
                     <span className="text-[11px] text-muted-foreground">data as of {t.at}</span>
                   </div>
                   <div className="eyebrow mt-2">Why it triggered</div>
-                  <ul className="mt-1 space-y-0.5 text-xs">
+                  <ul className="mt-1 space-y-0.5 break-words text-xs">
                     {t.reasons.map((r, j) => (
                       <li key={j}>• {r}</li>
                     ))}

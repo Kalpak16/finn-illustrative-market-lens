@@ -100,3 +100,8 @@ export function getMarketSnapshot(ticker: string): MarketSnapshot {
   cache.set(t, snap);
   return snap;
 }
+
+/** Demo market data exists only for symbols in the seeded universe. */
+export function hasMarketData(ticker: string): boolean {
+  return ticker.toUpperCase() in BASE_PRICE;
+}
