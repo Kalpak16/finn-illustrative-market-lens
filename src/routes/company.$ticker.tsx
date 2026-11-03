@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Plus, Sparkles } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { AnnouncementCard, AnnouncementSheet } from "@/components/finn/Announcement";
@@ -65,7 +65,7 @@ function CompanyPage() {
         )}
         <Button size="sm" asChild>
           <Link to="/research" search={{ ticker }}>
-            <Sparkles className="size-3.5" /> Investigate with FINN
+            Open research
           </Link>
         </Button>
       </div>

@@ -17,14 +17,18 @@ const fmtCr = (v: number) => "₹" + Math.round(v).toLocaleString("en-IN") + " c
 export function ResearchReportView({ r }: { r: R }) {
   const [view, setView] = useState<"annual" | "quarterly">("annual");
   const series = (view === "annual" ? r.annual : r.quarterly).map((p) => ({ ...p, margin: +((p.ebitda / p.revenue) * 100).toFixed(1) }));
-  const cash = r.annual.map((y) => ({ ...y, conv: +((y.ocf / y.pat) * 100).toFixed(0) }));
-  const divergent = cash.filter((c) => c.conv < 80).length;
+  const cash = r.annual.map((y) => ({ ...y, conv: y.pat > 0 && y.ocf != null ? +((y.ocf / y.pat) * 100).toFixed(0) : null }));
+  const divergent = cash.filter((c) => c.conv != null && c.conv < 80).length;
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-        <DemoBadge label="Synthetic research example" /> {r.basis}
-      </div>
+      <header className="panel p-4">
+        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <DemoBadge label="Synthetic research example" /> <span>{r.basis}</span>
+        </div>
+        <div className="mt-2 text-lg font-semibold tracking-tight">{r.ticker} · Equity research note</div>
+        <p className="mt-1 text-xs text-muted-foreground">Sections A–H. Every figure links to its source document; FINN does not issue ratings or price targets.</p>
+      </header>
 
       <Section title="A. Business snapshot">
         <div className="grid gap-4 md:grid-cols-[1fr_260px]">
@@ -168,8 +172,8 @@ export function ResearchReportView({ r }: { r: R }) {
           </div>
           <div className="num mt-2 flex flex-wrap gap-2 text-xs">
             {cash.map((c) => (
-              <span key={c.period} className={cn("rounded border px-1.5 py-0.5", c.conv >= 100 ? "border-positive/40 text-positive" : c.conv >= 80 ? "border-border" : "border-negative/40 text-negative")}>
-                {c.period} OCF/PAT {c.conv}%
+              <span key={c.period} className={cn("rounded border px-1.5 py-0.5", c.conv == null ? "border-border text-muted-foreground" : c.conv >= 100 ? "border-positive/40 text-positive" : c.conv >= 80 ? "border-border" : "border-negative/40 text-negative")} title={c.conv == null ? "Not meaningful: PAT was zero or negative" : undefined}>
+                {c.period} OCF/PAT {c.conv == null ? "n.m." : `${c.conv}%`}
               </span>
             ))}
           </div>
@@ -181,36 +185,59 @@ export function ResearchReportView({ r }: { r: R }) {
         </Section>
       </div>
 
-      <Section title="F. Narrative vs Numbers" action={<span className="text-[11px] text-muted-foreground">What management said vs what was delivered</span>}>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] text-sm">
-            <thead>
-              <tr className="border-b border-border text-left text-xs text-muted-foreground">
-                <th className="py-2 pr-3 font-medium">Management statement</th>
-                <th className="py-2 pr-3 font-medium">Period</th>
-                <th className="py-2 pr-3 font-medium">Actual outcome</th>
-                <th className="py-2 pr-3 font-medium">Status</th>
-                <th className="py-2 font-medium">Evidence</th>
-              </tr>
-            </thead>
-            <tbody>
-              {r.narrative.map((n) => (
-                <tr key={n.statement} className="border-b border-border/60 align-top last:border-0">
-                  <td className="py-2.5 pr-3">{n.statement}</td>
-                  <td className="py-2.5 pr-3 text-xs text-muted-foreground">{n.period}</td>
-                  <td className="py-2.5 pr-3">{n.outcome}</td>
-                  <td className="py-2.5 pr-3">
-                    <span className={cn("whitespace-nowrap rounded-md border px-1.5 py-0.5 text-[11px] font-semibold", STATUS_STYLE[n.status])}>{n.status}</span>
-                  </td>
-                  <td className="py-2.5">
-                    <SourceCite source={n.evidence} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <p className="mt-2 text-xs text-muted-foreground">Vague statements are never treated as numerical commitments; they are marked “Not yet measurable”.</p>
+      <Section
+        title="F. Narrative vs Numbers"
+        className="border-primary/30"
+        action={<span className="hidden text-[11px] text-muted-foreground sm:inline">What management said vs what the filings show</span>}
+      >
+        {(() => {
+          const counts = (["Delivered", "Partially delivered", "Missed", "Not yet measurable"] as GuidanceStatus[]).map((k) => ({ k, n: r.narrative.filter((x) => x.status === k).length }));
+          const measurable = r.narrative.filter((x) => x.status !== "Not yet measurable").length;
+          const delivered = counts[0].n + counts[1].n * 0.5;
+          return (
+            <div className="mb-4 grid gap-3 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center">
+              <div>
+                <div className="eyebrow">Credibility scorecard</div>
+                <div className="num mt-1 text-2xl font-semibold">
+                  {measurable ? Math.round((delivered / measurable) * 100) : "—"}
+                  {measurable > 0 && <span className="text-sm text-muted-foreground">%</span>}
+                </div>
+                <div className="text-[11px] text-muted-foreground">of measurable promises kept (partial = ½)</div>
+              </div>
+              <div>
+                <div className="flex h-2 overflow-hidden rounded-full bg-muted">
+                  {counts.map(({ k, n }) =>
+                    n ? <div key={k} className={cn("h-full", k === "Delivered" ? "bg-positive" : k === "Missed" ? "bg-negative" : k === "Partially delivered" ? "bg-warning" : "bg-muted-foreground/40")} style={{ width: `${(n / r.narrative.length) * 100}%` }} /> : null,
+                  )}
+                </div>
+                <div className="num mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+                  {counts.map(({ k, n }) => (
+                    <span key={k} className="text-muted-foreground"><span className="font-semibold text-foreground">{n}</span> {k.toLowerCase()}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+        <ol className="divide-y divide-border rounded-lg border border-border">
+          {r.narrative.map((n, i) => (
+            <li key={n.statement} className="grid gap-3 p-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_9rem]">
+              <div>
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"><span className="num mr-1">{i + 1}.</span>Management said · {n.period}</div>
+                <p className="mt-1 text-sm">“{n.statement.replace(/^["“]+|["”]+$/g, "")}”</p>
+              </div>
+              <div>
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Numbers show</div>
+                <p className="mt-1 text-sm">{n.outcome}</p>
+                <div className="mt-1.5"><SourceCite source={n.evidence} /></div>
+              </div>
+              <div className="md:text-right">
+                <span className={cn("inline-block whitespace-nowrap rounded-md border px-1.5 py-0.5 text-[11px] font-semibold", STATUS_STYLE[n.status])}>{n.status}</span>
+              </div>
+            </li>
+          ))}
+        </ol>
+        <p className="mt-2 text-xs text-muted-foreground">Vague statements are never treated as numerical commitments; they are marked “Not yet measurable” and excluded from the score.</p>
       </Section>
 
       <Section title="G. Management guidance">
@@ -236,7 +263,7 @@ export function ResearchReportView({ r }: { r: R }) {
             <div className="eyebrow mb-2 text-positive">Bull case</div>
             <ul className="space-y-1.5 text-sm">
               {r.bull.map((b) => (
-                <li key={b}>+ {b}</li>
+                <li key={b} className="border-l-2 border-positive/40 pl-2">{b}</li>
               ))}
             </ul>
           </div>
@@ -244,7 +271,7 @@ export function ResearchReportView({ r }: { r: R }) {
             <div className="eyebrow mb-2 text-negative">Bear case</div>
             <ul className="space-y-1.5 text-sm">
               {r.bear.map((b) => (
-                <li key={b}>− {b}</li>
+                <li key={b} className="border-l-2 border-negative/40 pl-2">{b}</li>
               ))}
             </ul>
           </div>

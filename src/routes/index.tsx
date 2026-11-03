@@ -1,11 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ChevronDown, Inbox } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { ChevronDown, Inbox, X } from "lucide-react";
+import { useEffect } from "react";
 import { useMemo, useState } from "react";
 import { AnnouncementCard, AnnouncementSheet } from "@/components/finn/Announcement";
 import { MarketActivity } from "@/components/finn/MarketActivity";
 import { DemoBadge, EmptyState, Stat } from "@/components/finn/primitives";
 
 import { fmtDate, fmtDateTime, inr, pct, toneOf } from "@/lib/finn/format";
+import { getResearch } from "@/lib/finn/data/research";
 import { portfolioTotals } from "@/lib/finn/portfolio";
 import { DEMO_NOW, useFinnState, useScoredAnnouncements } from "@/lib/finn/store";
 import type { AnnouncementCategory, Priority, ScoredAnnouncement } from "@/lib/finn/types";
@@ -71,6 +74,12 @@ function Feed() {
   const [to, setTo] = useState("2026-11-03");
   const [showOther, setShowOther] = useState(false);
   const [open, setOpen] = useState<ScoredAnnouncement | null>(null);
+  const [guide, setGuide] = useState(false);
+  useEffect(() => setGuide(localStorage.getItem("finn.guide.dismissed") !== "1"), []);
+  const dismissGuide = () => {
+    localStorage.setItem("finn.guide.dismissed", "1");
+    setGuide(false);
+  };
 
   const totals = portfolioTotals(holdings);
   const portSet = new Set(holdings.map((h) => h.ticker));
@@ -115,6 +124,46 @@ function Feed() {
         </div>
         <DemoBadge label="Demo workspace" />
       </div>
+
+      {guide && (
+        <div className="panel mb-5 border-primary/30 p-4">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3">
+            <div className="min-w-0">
+              <div className="eyebrow text-primary">Evaluator guide · 3 steps</div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                This workspace runs on synthetic sample filings and prices — nothing here is live exchange data.
+              </p>
+            </div>
+            <button onClick={dismissGuide} aria-label="Dismiss guide" className="text-muted-foreground hover:text-foreground">
+              <X className="size-4" />
+            </button>
+          </div>
+          <ol className="mt-3 grid gap-2 text-sm sm:grid-cols-3">
+            <li className="rounded-md border border-border p-3">
+              <span className="num mr-1.5 font-semibold text-primary">1</span>
+              {critical[0] ? (
+                <button className="text-left hover:text-primary" onClick={() => setOpen(critical[0])}>
+                  Open <b>Why should I care?</b> on the top critical item ({critical[0].ticker}).
+                </button>
+              ) : (
+                "Open Why should I care? on any card."
+              )}
+            </li>
+            <li className="rounded-md border border-border p-3">
+              <span className="num mr-1.5 font-semibold text-primary">2</span>
+              <Link to="/research" search={{ ticker: critical.find((c) => getResearch(c.ticker))?.ticker ?? "TATAMOTORS" }} className="hover:text-primary">
+                Read the research report and its <b>Narrative vs Numbers</b> scorecard.
+              </Link>
+            </li>
+            <li className="rounded-md border border-border p-3">
+              <span className="num mr-1.5 font-semibold text-primary">3</span>
+              <Link to="/research" className="hover:text-primary">
+                Upload a real annual report PDF to get cited, evidence-checked analysis.
+              </Link>
+            </li>
+          </ol>
+        </div>
+      )}
 
       <div className="panel mb-5 grid grid-cols-2 gap-4 p-4 md:grid-cols-4">
         <Stat label="Portfolio value" value={inr(totals.value, 0)} sub={`${holdings.length} holdings · EOD`} />
@@ -176,6 +225,9 @@ function Feed() {
             </div>
           </div>
 
+          <p className="mb-3 text-xs text-muted-foreground">
+            Each card shows why it is ranked where it is. Critical ≥ 70, Important 45–69, routine filings below 45 are collapsed.
+          </p>
           <div className="space-y-3">
             {main.length === 0 && other.length === 0 && (
               <EmptyState icon={<Inbox className="size-6" />} title="Nothing matches these filters" body="Widen the time window or clear category filters." />

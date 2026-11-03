@@ -1,10 +1,12 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { companyName } from "@/lib/finn/data/companies";
 import { getMarketSnapshot } from "@/lib/finn/data/market";
 import { crore, fmtDateTime, inr, pct, toneOf } from "@/lib/finn/format";
+import { priorityThreshold, rankDrivers } from "@/lib/finn/scoring";
+import { useFinnState } from "@/lib/finn/store";
 import type { ScoredAnnouncement } from "@/lib/finn/types";
 import { cn } from "@/lib/utils";
 import { PriceVolumeChart } from "./PriceChart";
@@ -31,64 +33,71 @@ export function MetricsGrid({ a }: { a: ScoredAnnouncement }) {
   );
 }
 
+export function RankReason({ a, className }: { a: ScoredAnnouncement; className?: string }) {
+  const d = rankDrivers(a);
+  return (
+    <p className={cn("text-xs text-muted-foreground", className)}>
+      <span className="font-medium text-foreground/80">Ranked {a.priority === "low" ? "low" : a.priority} ({a.score}/100)</span> — driven by{" "}
+      {d.map((x, i) => (
+        <span key={x.label}>
+          {x.label} <span className="num">+{x.points}</span>
+          {i < d.length - 2 ? ", " : i === d.length - 2 ? " and " : ""}
+        </span>
+      ))}
+      .
+    </p>
+  );
+}
+
 export function AnnouncementCard({ a, onOpen }: { a: ScoredAnnouncement; onOpen: () => void }) {
   return (
     <article
       className={cn(
-        "panel group relative overflow-hidden p-4 transition-colors hover:border-primary/40",
-        a.priority === "critical" && "before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-negative",
+        "panel relative overflow-hidden transition-colors hover:border-primary/40",
+        a.priority === "critical" && "border-l-2 border-l-negative",
+        a.priority === "important" && "border-l-2 border-l-warning",
       )}
     >
-      <div className="flex items-start gap-3">
-        <CompanyAvatar ticker={a.ticker} />
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-            <span className="font-semibold text-foreground">{companyName(a.ticker)}</span>
+      <div className="p-4">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+            <Link to="/company/$ticker" params={{ ticker: a.ticker }} className="font-semibold text-foreground hover:text-primary">
+              {companyName(a.ticker)}
+            </Link>
             <span className="num text-muted-foreground">{a.ticker}</span>
-            <span className="rounded border border-border px-1.5 py-px text-muted-foreground">{a.category}</span>
-            <span className="text-muted-foreground">{fmtDateTime(a.filedAt)}</span>
-            <span className="ml-auto">
-              <PriorityBadge priority={a.priority} score={a.score} />
-            </span>
+            <span className="text-muted-foreground">·</span>
+            <span className="text-muted-foreground">{a.category}</span>
+            <span className="text-muted-foreground">·</span>
+            <span className="num text-muted-foreground">{fmtDateTime(a.filedAt)}</span>
           </div>
-          <button onClick={onOpen} className="mt-1.5 text-left text-[15px] font-semibold leading-snug hover:text-primary">
-            {a.headline}
-          </button>
-          <div className="mt-3 grid gap-3 text-sm md:grid-cols-3">
-            <div>
-              <div className="eyebrow mb-1">What happened</div>
-              <p className="text-foreground/85">{a.whatHappened}</p>
-            </div>
-            <div>
-              <div className="eyebrow mb-1">Why it matters</div>
-              <p className="text-foreground/85">{a.whyItMatters}</p>
-            </div>
-            <div>
-              <div className="eyebrow mb-1">Implications</div>
-              <p className="text-foreground/85">{a.implications}</p>
-            </div>
+          <PriorityBadge priority={a.priority} score={a.score} />
+        </div>
+        <button onClick={onOpen} className="mt-2 block text-left text-base font-semibold leading-snug tracking-tight hover:text-primary">
+          {a.headline}
+        </button>
+        <p className="mt-2 text-sm leading-relaxed text-foreground/90">
+          <span className="font-semibold text-foreground">Why it matters: </span>
+          {a.whyItMatters}
+        </p>
+        <RankReason a={a} className="mt-2" />
+        {a.metrics && (
+          <div className="mt-3">
+            <MetricsGrid a={a} />
           </div>
-          {a.metrics && (
-            <div className="mt-3">
-              <MetricsGrid a={a} />
-            </div>
-          )}
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
-            <div className="flex min-w-0 items-center gap-2">
-              <DemoBadge label="Sample" />
-              <SourceCite source={a.source} compact />
-            </div>
-            <div className="flex gap-2">
-              <Button size="sm" variant="ghost" onClick={onOpen}>
-                Why should I care?
-              </Button>
-              <Button size="sm" asChild>
-                <Link to="/research" search={{ ticker: a.ticker }}>
-                  <Sparkles className="size-3.5" /> Investigate with FINN
-                </Link>
-              </Button>
-            </div>
-          </div>
+        )}
+      </div>
+      <div className="flex flex-col gap-2 border-t border-border bg-surface/50 px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-2">
+          <DemoBadge label="Sample" />
+          <SourceCite source={a.source} compact />
+        </div>
+        <div className="flex gap-2">
+          <Button size="sm" variant="ghost" asChild>
+            <Link to="/research" search={{ ticker: a.ticker }}>Research</Link>
+          </Button>
+          <Button size="sm" onClick={onOpen}>
+            Why should I care? <ArrowRight className="size-3.5" />
+          </Button>
         </div>
       </div>
     </article>
@@ -97,6 +106,17 @@ export function AnnouncementCard({ a, onOpen }: { a: ScoredAnnouncement; onOpen:
 
 export function AnnouncementSheet({ a, onClose }: { a: ScoredAnnouncement | null; onClose: () => void }) {
   const m = a ? getMarketSnapshot(a.ticker) : null;
+  const { settings } = useFinnState();
+  const totalW = Object.values(settings.weights).reduce((s, v) => s + v, 0) || 1;
+  const maxPts: Record<string, number> = {
+    Category: settings.weights.category,
+    Materiality: settings.weights.materiality,
+    "Earnings impact": settings.weights.earnings,
+    "Balance sheet": settings.weights.balanceSheet,
+    Strategic: settings.weights.strategic,
+    Recency: settings.weights.recency,
+    Portfolio: settings.weights.portfolio,
+  };
   return (
     <Sheet open={!!a} onOpenChange={(o) => !o && onClose()}>
       <SheetContent className="w-full overflow-y-auto border-border bg-background sm:max-w-xl">
@@ -117,20 +137,27 @@ export function AnnouncementSheet({ a, onClose }: { a: ScoredAnnouncement | null
             </SheetHeader>
 
             <div className="mt-5 space-y-4">
-              {[
-                ["What happened?", a.whatHappened],
-                ["Why does it matter?", a.whyItMatters],
-                ["What should I investigate?", a.investigate],
-              ].map(([t, body]) => (
-                <div key={t} className="rounded-lg border border-border bg-card p-3">
-                  <div className="eyebrow mb-1 text-primary">{t}</div>
-                  <p className="text-sm">{body}</p>
-                </div>
-              ))}
+              <div className="eyebrow text-primary">Why should I care?</div>
+              <ol className="divide-y divide-border rounded-lg border border-border bg-card">
+                {[
+                  ["What happened", a.whatHappened],
+                  ["Why it matters", a.whyItMatters],
+                  ["What it could change", a.implications],
+                  ["What to investigate next", a.investigate],
+                ].map(([t, body], i) => (
+                  <li key={t} className="grid grid-cols-[1.5rem_minmax(0,1fr)] gap-2 p-3">
+                    <span className="num text-xs font-semibold text-muted-foreground">{i + 1}</span>
+                    <div>
+                      <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t}</div>
+                      <p className="mt-1 text-sm leading-relaxed">{body}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
               <div className="rounded-lg border border-border bg-card p-3">
-                <div className="eyebrow mb-1 text-primary">What evidence supports this?</div>
+                <div className="eyebrow mb-2">Evidence</div>
                 <SourceCite source={a.source} />
-                {a.source.excerpt && <p className="mt-2 border-l-2 border-border pl-2 text-xs italic text-muted-foreground">{a.source.excerpt}</p>}
+                {a.source.excerpt && <blockquote className="mt-2 border-l-2 border-primary/50 pl-3 text-xs text-muted-foreground">“{a.source.excerpt}”</blockquote>}
               </div>
 
               {a.metrics && (
@@ -155,23 +182,29 @@ export function AnnouncementSheet({ a, onClose }: { a: ScoredAnnouncement | null
               </div>
 
               <div className="rounded-lg border border-border bg-card p-3">
-                <div className="eyebrow mb-2">Why this score — relevance breakdown</div>
+                <div className="eyebrow mb-1">Why it ranks here</div>
+                <p className="mb-3 text-xs text-muted-foreground">
+                  Score <span className="num font-semibold text-foreground">{a.score}/100</span> → {a.priority} ({priorityThreshold(a.priority)}). Each factor earns up to its weight; weights are editable in Settings.
+                </p>
                 <div className="space-y-1.5">
-                  {Object.entries(a.breakdown).map(([k, v]) => (
-                    <div key={k} className="flex items-center gap-2 text-xs">
-                      <span className="w-28 text-muted-foreground">{k}</span>
-                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
-                        <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, v * 4)}%` }} />
+                  {Object.entries(a.breakdown).map(([k, v]) => {
+                    const max = Math.round((maxPts[k] ?? 0) / totalW * 100) || 1;
+                    return (
+                      <div key={k} className="grid grid-cols-[7rem_minmax(0,1fr)_3.5rem] items-center gap-2 text-xs">
+                        <span className="text-muted-foreground">{k}</span>
+                        <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                          <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, (v / max) * 100)}%` }} />
+                        </div>
+                        <span className="num text-right">{v}<span className="text-muted-foreground">/{max}</span></span>
                       </div>
-                      <span className="num w-6 text-right">{v}</span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
               <Button className="w-full" asChild>
                 <Link to="/research" search={{ ticker: a.ticker }}>
-                  Investigate with FINN <ArrowRight className="size-4" />
+                  Open {a.ticker} research <ArrowRight className="size-4" />
                 </Link>
               </Button>
             </div>
