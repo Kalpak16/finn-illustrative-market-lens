@@ -35,7 +35,6 @@ const SUGGESTED = [
 function Research() {
   const { ticker } = Route.useSearch();
   const navigate = useNavigate({ from: "/research" });
-  const report = ticker ? getResearch(ticker) : undefined;
   const select = (t: string) => navigate({ search: { ticker: t } });
 
   return (
