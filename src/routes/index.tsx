@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { AnnouncementCard, AnnouncementSheet } from "@/components/finn/Announcement";
 import { MarketActivity } from "@/components/finn/MarketActivity";
 import { DemoBadge, EmptyState, Stat } from "@/components/finn/primitives";
-import { companyName } from "@/lib/finn/data/companies";
+
 import { fmtDate, fmtDateTime, inr, pct, toneOf } from "@/lib/finn/format";
 import { portfolioTotals } from "@/lib/finn/portfolio";
 import { DEMO_NOW, useFinnState, useScoredAnnouncements } from "@/lib/finn/store";
@@ -225,7 +225,6 @@ function Feed() {
       </div>
 
       <AnnouncementSheet a={open} onClose={() => setOpen(null)} />
-      <span className="sr-only">{companyName("RELIANCE")}</span>
     </div>
   );
 }
