@@ -107,7 +107,7 @@ function Feed() {
             {fmtDate(new Date().toISOString())} · data window to {fmtDateTime(DEMO_NOW.toISOString())} IST
           </div>
           <h1 className="mt-1 text-xl font-semibold tracking-tight" suppressHydrationWarning>
-            {greeting()}, {settings.displayName}.
+            {greeting()}, {settings.displayName.trim() || "Investor"}.
           </h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
             {critical.length} critical development{critical.length === 1 ? "" : "s"} need your attention first.

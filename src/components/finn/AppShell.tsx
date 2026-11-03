@@ -133,7 +133,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               aria-label="Profile and settings"
               className="grid size-9 place-items-center rounded-lg bg-secondary text-xs font-semibold"
             >
-              {settings.displayName.slice(0, 2).toUpperCase()}
+              {(settings.displayName.trim() || "Investor").slice(0, 2).toUpperCase()}
             </Link>
           </div>
         </header>
