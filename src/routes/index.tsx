@@ -8,6 +8,7 @@ import { MarketActivity } from "@/components/finn/MarketActivity";
 import { DemoBadge, EmptyState, Stat } from "@/components/finn/primitives";
 
 import { fmtDate, fmtDateTime, inr, pct, toneOf } from "@/lib/finn/format";
+import { getResearch } from "@/lib/finn/data/research";
 import { portfolioTotals } from "@/lib/finn/portfolio";
 import { DEMO_NOW, useFinnState, useScoredAnnouncements } from "@/lib/finn/store";
 import type { AnnouncementCategory, Priority, ScoredAnnouncement } from "@/lib/finn/types";
@@ -150,7 +151,7 @@ function Feed() {
             </li>
             <li className="rounded-md border border-border p-3">
               <span className="num mr-1.5 font-semibold text-primary">2</span>
-              <Link to="/research" search={{ ticker: critical[0]?.ticker ?? "TATAMOTORS" }} className="hover:text-primary">
+              <Link to="/research" search={{ ticker: critical.find((c) => getResearch(c.ticker))?.ticker ?? "TATAMOTORS" }} className="hover:text-primary">
                 Read the research report and its <b>Narrative vs Numbers</b> scorecard.
               </Link>
             </li>
