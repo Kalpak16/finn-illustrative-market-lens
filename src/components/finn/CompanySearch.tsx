@@ -23,7 +23,7 @@ export function CompanySearch({
     if (!s) return [];
     const hits = UNIVERSE.filter((c) => c.ticker.toLowerCase().includes(s) || c.name.toLowerCase().includes(s)).slice(0, 7);
     const exact = hits.some((h) => h.ticker.toLowerCase() === s);
-    const items = hits.map((h) => ({ ticker: h.ticker, label: h.name, note: h.sector }));
+    const items: { ticker: string; label: string; note: string }[] = hits.map((h) => ({ ticker: h.ticker, label: h.name, note: h.sector }));
     if (!exact && isValidNseSymbol(q)) items.push({ ticker: q.trim().toUpperCase(), label: "Use NSE symbol", note: "Not in demo universe" });
     return items;
   }, [q]);
