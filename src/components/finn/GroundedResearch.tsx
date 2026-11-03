@@ -231,6 +231,8 @@ export function GroundedResearch({ ticker, g, onInspect, onUsed }: { ticker: str
             </ul>
           </details>
         )}
+        {r.out.insufficient && r.out.reason && <p className="text-xs text-muted-foreground">Why: {r.out.reason}</p>}
+        {r.passages.length === 0 && <p className="text-xs text-muted-foreground">No passage in your documents matched this request.</p>}
         {(!r.out.ok || r.out.insufficient) && r.passages.length > 0 && (
           <div>
             <div className="eyebrow mb-1">Most relevant retrieved passages (verbatim)</div>

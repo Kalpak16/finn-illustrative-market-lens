@@ -20,6 +20,7 @@ export interface GroundedOutput {
   bull: Claim[];
   bear: Claim[];
   nextQuestion: string | null;
+  reason?: string;
   dropped: { text: string; reason: string }[];
   error?: string;
 }
@@ -47,14 +48,14 @@ const claimSchema = {
 };
 
 function schemaFor(task: ResearchTask) {
-  const base = { insufficient: { type: "boolean" }, next_question: { type: "string" } };
+  const base = { insufficient: { type: "boolean" }, insufficient_reason: { type: "string" }, next_question: { type: "string" } };
   if (task === "qa")
-    return { type: "object", additionalProperties: false, required: ["insufficient", "claims", "next_question"], properties: { ...base, claims: { type: "array", items: claimSchema } } };
+    return { type: "object", additionalProperties: false, required: ["insufficient", "insufficient_reason", "claims", "next_question"], properties: { ...base, claims: { type: "array", items: claimSchema } } };
   if (task === "guidance")
     return {
       type: "object",
       additionalProperties: false,
-      required: ["insufficient", "rows", "next_question"],
+      required: ["insufficient", "insufficient_reason", "rows", "next_question"],
       properties: {
         ...base,
         rows: {
@@ -78,7 +79,7 @@ function schemaFor(task: ResearchTask) {
   return {
     type: "object",
     additionalProperties: false,
-    required: ["insufficient", "bull", "bear", "next_question"],
+    required: ["insufficient", "insufficient_reason", "bull", "bear", "next_question"],
     properties: { ...base, bull: { type: "array", items: claimSchema }, bear: { type: "array", items: claimSchema } },
   };
 }
@@ -89,7 +90,7 @@ STRICT RULES:
 - Every claim must cite one or more passage ids exactly as given (e.g. "d1:4"). Never invent ids.
 - Every number you write must appear verbatim in a cited passage or in CALCULATIONS. Do not compute new numbers yourself.
 - Keep claims short (one sentence). Do not give buy/sell recommendations.
-- If the passages do not answer the request, set insufficient=true and return empty arrays.
+- If the passages do not answer the request (or concern a different company), set insufficient=true, explain why briefly in insufficient_reason, and return empty arrays. Otherwise insufficient_reason is "".
 - Never treat vague commentary as a numerical commitment.`;
 
 const TASK_PROMPT: Record<ResearchTask, string> = {
@@ -131,7 +132,6 @@ export const groundedResearch = createServerFn({ method: "POST" })
         text: { format: { type: "json_schema", name: `finn_${data.task}`, schema: schemaFor(data.task), strict: true } },
       });
       const raw = outputText(res);
-      console.log("FINN grounded", data.task, "status", (res as { status?: string }).status, "raw", raw.slice(0, 600));
       const parsed = JSON.parse(raw || "{}");
       const passages = Object.fromEntries(data.passages.map((p) => [p.id, p.text]));
       const calcTexts = data.calculations.map((c) => `${c.value} ${c.formula}`);
@@ -141,7 +141,7 @@ export const groundedResearch = createServerFn({ method: "POST" })
         dropped.push(...r.dropped.map((d) => ({ text: d.item.text, reason: d.reason })));
         return r.kept;
       };
-      const out: GroundedOutput = { ok: true, insufficient: false, ...EMPTY, dropped, nextQuestion: parsed.next_question || null };
+      const out: GroundedOutput = { ok: true, insufficient: false, ...EMPTY, dropped, nextQuestion: parsed.next_question || null, reason: parsed.insufficient_reason || undefined };
       if (data.task === "qa") out.claims = g(parsed.claims);
       if (data.task === "bullbear") {
         out.bull = g(parsed.bull);
