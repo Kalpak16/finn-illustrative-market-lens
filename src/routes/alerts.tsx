@@ -67,7 +67,11 @@ function NumField({ label, value, onChange, step = 1 }: { label: string; value: 
 function RuleDialog({ rule, onClose }: { rule: AlertRule | null; onClose: () => void }) {
   const { holdings } = useFinnState();
   const [r, setR] = useState<AlertRule | null>(rule);
-  if (rule && r?.id !== rule.id) setR(rule);
+  const [tickersText, setTickersText] = useState(rule?.tickers.join(", ") ?? "");
+  if (rule && r?.id !== rule.id) {
+    setR(rule);
+    setTickersText(rule.tickers.join(", "));
+  }
   const sectors = [...new Set(holdings.map((h) => h.sector))] as Sector[];
   const toggle = <T,>(arr: T[], v: T) => (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
   return (
@@ -87,8 +91,11 @@ function RuleDialog({ rule, onClose }: { rule: AlertRule | null; onClose: () => 
             <div>
               <div className="eyebrow mb-1.5">Companies (empty = any)</div>
               <input
-                value={r.tickers.join(", ")}
-                onChange={(e) => setR({ ...r, tickers: e.target.value.toUpperCase().split(/[,\s]+/).filter(Boolean) })}
+                value={tickersText}
+                onChange={(e) => {
+                  setTickersText(e.target.value.toUpperCase());
+                  setR({ ...r, tickers: e.target.value.toUpperCase().split(/[,\s]+/).filter(Boolean) });
+                }}
                 placeholder="e.g. INFY, TCS"
                 className="num h-9 w-full rounded-lg border border-border bg-surface px-3 text-sm outline-none focus:border-primary/60"
               />
