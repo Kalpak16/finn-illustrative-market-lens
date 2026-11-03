@@ -167,7 +167,7 @@ function Alerts() {
           </Button>
         }
       />
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <Section title={`Rules (${rules.length})`}>
           {rules.length === 0 ? (
             <EmptyState icon={<Zap className="size-6" />} title="No rules" body="Create a rule to be alerted on filings, priority, price or volume." />
