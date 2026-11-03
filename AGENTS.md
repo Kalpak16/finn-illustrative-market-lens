@@ -14,3 +14,4 @@
 - All seeded data is synthetic and must stay labelled as demo; never present it as live or as real filings.
 - State persists to localStorage via `src/lib/finn/store.ts` until a backend adapter replaces it.
 - tsconfig keeps exactOptionalPropertyTypes, noUncheckedIndexedAccess, noPropertyAccessFromIndexSignature and noImplicitReturns off — they produced hundreds of low-value errors across UI code.
+- Grounded research lives in `src/lib/finn/rag/`: extraction/chunking/BM25 retrieval/metric extraction run in the browser (documents in IndexedDB); the server function only explains retrieved passages via the AI Gateway. Every LLM claim passes `grounding.ts` (valid citation ids + numbers present in cited text or deterministic calcs) — never bypass it, and never let the model compute figures.
