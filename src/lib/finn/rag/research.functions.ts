@@ -110,7 +110,7 @@ function outputText(res: unknown): string {
 }
 
 export const groundedResearch = createServerFn({ method: "POST" })
-  .inputValidator(validate)
+  .validator(validate)
   .handler(async ({ data }): Promise<GroundedOutput> => {
     if (data.passages.length === 0) return { ok: true, insufficient: true, ...EMPTY };
     const { generateResponse, GatewayError } = await import("@lovable.dev/ai-gateway");
@@ -130,7 +130,9 @@ export const groundedResearch = createServerFn({ method: "POST" })
         ],
         text: { format: { type: "json_schema", name: `finn_${data.task}`, schema: schemaFor(data.task), strict: true } },
       });
-      const parsed = JSON.parse(outputText(res) || "{}");
+      const raw = outputText(res);
+      console.log("FINN grounded", data.task, "status", (res as { status?: string }).status, "raw", raw.slice(0, 600));
+      const parsed = JSON.parse(raw || "{}");
       const passages = Object.fromEntries(data.passages.map((p) => [p.id, p.text]));
       const calcTexts = data.calculations.map((c) => `${c.value} ${c.formula}`);
       const dropped: GroundedOutput["dropped"] = [];
